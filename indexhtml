@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Настройки</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root{
+    --bg:#000000; --card:#1c1c1e; --card2:#2c2c2e; --text:#ffffff;
+    --sub:#8e8e93; --line:#38383a; --on:#34c759;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    padding:env(safe-area-inset-top,0) 14px env(safe-area-inset-bottom,0);
+  }
+  h1{font-size:20px; font-weight:700; margin:20px 2px 4px;}
+  p.hint{color:var(--sub); font-size:13px; margin:0 2px 18px;}
+  .group{background:var(--card); border-radius:14px; overflow:hidden; margin-bottom:22px;}
+  .row{
+    display:flex; align-items:center; gap:12px; padding:12px 14px;
+    border-bottom:1px solid var(--line);
+  }
+  .row:last-child{border-bottom:none;}
+  .icon{
+    width:30px; height:30px; border-radius:8px; flex:none;
+    display:flex; align-items:center; justify-content:center; font-size:16px;
+  }
+  .label{flex:1; font-size:16px;}
+  .desc{color:var(--sub); font-size:12px; margin-top:1px;}
+  .switch{position:relative; width:46px; height:27px; flex:none;}
+  .switch input{display:none;}
+  .track{
+    position:absolute; inset:0; background:var(--card2); border-radius:27px;
+    transition:.2s;
+  }
+  .track::after{
+    content:""; position:absolute; top:2px; left:2px; width:23px; height:23px;
+    background:#fff; border-radius:50%; transition:.2s;
+    box-shadow:0 2px 4px rgba(0,0,0,.3);
+  }
+  input:checked + .track{background:var(--on);}
+  input:checked + .track::after{transform:translateX(19px);}
+  .save{
+    width:100%; padding:14px; border:none; border-radius:14px;
+    background:var(--on); color:#fff; font-size:16px; font-weight:600;
+    margin-bottom:10px; cursor:pointer;
+  }
+  .save:active{opacity:.85;}
+  .status{text-align:center; color:var(--sub); font-size:13px; min-height:18px;}
+</style>
+</head>
+<body>
+  <h1>Настройки all see bot</h1>
+  <p class="hint">Включайте и выключайте, что бот отслеживает в ваших чатах.</p>
+
+  <div class="group">
+    <div class="row">
+      <div class="icon" style="background:#ff3b30">🗑️</div>
+      <div class="label">Удалённые<div class="desc">Копия удалённого сообщения вам в бота</div></div>
+      <label class="switch"><input type="checkbox" id="deleted" checked><span class="track"></span></label>
+    </div>
+    <div class="row">
+      <div class="icon" style="background:#ff9500">✏️</div>
+      <div class="label">Изменённые<div class="desc">Было / стало при редактировании</div></div>
+      <label class="switch"><input type="checkbox" id="edited" checked><span class="track"></span></label>
+    </div>
+    <div class="row">
+      <div class="icon" style="background:#5856d6">👻</div>
+      <div class="label">Режим призрак<div class="desc">Входящие дублируются, чат остаётся непрочитанным</div></div>
+      <label class="switch"><input type="checkbox" id="ghost"><span class="track"></span></label>
+    </div>
+  </div>
+
+  <div class="group">
+    <div class="row">
+      <div class="icon" style="background:#007aff">📨</div>
+      <div class="label">/spam<div class="desc">Разрешить команду рассылки слова</div></div>
+      <label class="switch"><input type="checkbox" id="spam" checked><span class="track"></span></label>
+    </div>
+    <div class="row">
+      <div class="icon" style="background:#ff2d55">❤️</div>
+      <div class="label">/reaction<div class="desc">Разрешить включать реакции в группах</div></div>
+      <label class="switch"><input type="checkbox" id="reaction" checked><span class="track"></span></label>
+    </div>
+    <div class="row">
+      <div class="icon" style="background:#af52de">👥</div>
+      <div class="label">/clone<div class="desc">Разрешить копировать био и аватар</div></div>
+      <label class="switch"><input type="checkbox" id="clone" checked><span class="track"></span></label>
+    </div>
+  </div>
+
+  <button class="save" id="saveBtn">Сохранить</button>
+  <div class="status" id="status"></div>
+
+<script>
+  const tg = window.Telegram && window.Telegram.WebApp;
+  if (tg) { tg.ready(); tg.expand(); }
+
+  const ids = ["deleted", "edited", "ghost", "spam", "reaction", "clone"];
+  try {
+    const saved = JSON.parse(localStorage.getItem("allseebot_prefs") || "{}");
+    ids.forEach(id => {
+      if (id in saved) document.getElementById(id).checked = saved[id];
+    });
+  } catch (e) { /* первый запуск — оставляем значения по умолчанию */ }
+
+  document.getElementById("saveBtn").onclick = () => {
+    const prefs = {};
+    ids.forEach(id => prefs[id] = document.getElementById(id).checked);
+    try { localStorage.setItem("allseebot_prefs", JSON.stringify(prefs)); } catch (e) {}
+    if (tg && tg.sendData) {
+      tg.sendData(JSON.stringify(prefs));
+      document.getElementById("status").textContent = "Отправлено боту…";
+      setTimeout(() => tg.close(), 400);
+    } else {
+      document.getElementById("status").textContent =
+        "Откройте эту страницу через кнопку в боте, не напрямую в браузере.";
+    }
+  };
+</script>
+</body>
+</html>
