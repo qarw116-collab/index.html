@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>all see bot: настройки</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root { --bg:#0b0b0d; --card:#17171b; --line:#26262c; --text:#f3f3f5; --muted:#9a9aa3; --acc:#ff9b1f; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin:0; background:var(--bg); color:var(--text); font:16px/1.4 -apple-system, "Segoe UI", Roboto, sans-serif;
+         padding:16px 16px calc(96px + env(safe-area-inset-bottom, 0px)); }
+  h1 { font-size:22px; margin:8px 0 4px; }
+  h1 span { color:var(--acc); }
+  p.sub { margin:0 0 18px; color:var(--muted); font-size:14px; }
+  .group { background:var(--card); border:1px solid var(--line); border-radius:16px; overflow:hidden; margin-bottom:16px; }
+  .row { display:flex; align-items:center; gap:12px; padding:14px 16px; border-bottom:1px solid var(--line); cursor:pointer; }
+  .row:last-child { border-bottom:0; }
+  .ico { font-size:22px; width:28px; text-align:center; }
+  .txt { flex:1; min-width:0; }
+  .txt b { display:block; font-weight:600; }
+  .txt small { color:var(--muted); font-size:13px; }
+  .sw { position:relative; width:50px; height:30px; flex:none; }
+  .sw input { opacity:0; width:100%; height:100%; margin:0; position:absolute; inset:0; cursor:pointer; z-index:1; }
+  .sw i { position:absolute; inset:0; background:#34343b; border-radius:30px; transition:.2s; }
+  .sw i::after { content:""; position:absolute; top:3px; left:3px; width:24px; height:24px; border-radius:50%; background:#fff; transition:.2s; }
+  .sw input:checked + i { background:var(--acc); }
+  .sw input:checked + i::after { transform:translateX(20px); }
+  .bar { position:fixed; left:0; right:0; bottom:0; padding:12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+         background:linear-gradient(transparent, var(--bg) 30%); }
+  button { width:100%; border:0; border-radius:14px; padding:15px; font-weight:600; font-size:16px; font-family:inherit; color:#1a1100; background:var(--acc); cursor:pointer; }
+  button:active { opacity:.85; }
+  #err { display:none; text-align:center; padding:40px 16px; color:var(--muted); }
+</style>
+</head>
+<body>
+<div id="app">
+  <h1>all see <span>bot</span></h1>
+  <p class="sub">Включайте и выключайте функции. Не забудьте нажать «Сохранить».</p>
+  <div class="group" id="list"></div>
+  <div class="bar"><button id="save">Сохранить</button></div>
+</div>
+<div id="err">Откройте настройки в боте: напишите ему /settings и нажмите кнопку «⚙️ Настройки».</div>
+
+<script>
+  var tg = window.Telegram && window.Telegram.WebApp;
+  var inTelegram = tg && tg.platform && tg.platform !== "unknown";
+
+  // ключи совпадают с PREF_KEYS в bot.py
+  var ITEMS = [
+    { key: "ghost",    icon: "👻", title: "Режим призрак",         desc: "Входящие дублируются в бота, чат остаётся непрочитанным", def: false },
+    { key: "deleted",  icon: "🗑", title: "Удалённые сообщения",   desc: "Присылать копию, когда собеседник удалил сообщение",     def: true  },
+    { key: "edited",   icon: "✏️", title: "Изменённые сообщения",  desc: "Показывать, что было и что стало",                         def: true  },
+    { key: "spam",     icon: "📨", title: "Команда /spam",          desc: "Разрешить отправку слова несколько раз",                  def: true  },
+    { key: "reaction", icon: "❤️", title: "Команда /reaction",      desc: "Ставить ❤ на сообщения в группе",                         def: true  },
+    { key: "clone",    icon: "👥", title: "Команда /clone",         desc: "Копировать био и аватар собеседника",                     def: true  }
+  ];
+
+  if (!inTelegram) {
+    document.getElementById("app").style.display = "none";
+    document.getElementById("err").style.display = "block";
+  } else {
+    tg.ready();
+    tg.expand();
+    var q = new URLSearchParams(location.search);
+    var list = document.getElementById("list");
+    ITEMS.forEach(function (it) {
+      var on = q.has(it.key) ? q.get(it.key) === "1" : it.def;
+      var row = document.createElement("label");
+      row.className = "row";
+      row.innerHTML =
+        '<span class="ico">' + it.icon + '</span>' +
+        '<span class="txt"><b>' + it.title + '</b><small>' + it.desc + '</small></span>' +
+        '<span class="sw"><input type="checkbox" id="' + it.key + '"' + (on ? " checked" : "") + '><i></i></span>';
+      list.appendChild(row);
+      row.querySelector("input").addEventListener("change", function () {
+        if (tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
+      });
+    });
+    document.getElementById("save").addEventListener("click", function () {
+      var data = {};
+      ITEMS.forEach(function (it) { data[it.key] = document.getElementById(it.key).checked; });
+      if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred("success");
+      tg.sendData(JSON.stringify(data)); // бот получит данные и приложение закроется
+    });
+  }
+</script>
+</body>
+</html>
